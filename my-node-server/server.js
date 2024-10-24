@@ -1,58 +1,87 @@
-const http = require("http");
+// Import the http module to create an HTTP server
+const http = require('http');
+const url = require('url');
 
-// Create server
+// Create an HTTP server
 const server = http.createServer((req, res) => {
-  const { method, url } = req;
-  let body = "";
+    const parsedUrl = url.parse(req.url, true);
 
-  // Collect data chunks from the request body
-  req.on("data", (chunk) => {
-    body += chunk.toString();
-  });
-
-  req.on("end", () => {
-    res.setHeader("Content-Type", "application/json");
-
-    // Routes
-    if (url === "/" && method === "GET") {
-      res.statusCode = 200;
-      res.end(JSON.stringify({ message: "Welcome to the Node.js Server!" })); //Returns a welcome message.
-    } else if (
-      (url === "/" && method === "PUT") ||
-      (url === "/" && method === "PATCH")
-    ) {
-      const data = body ? JSON.parse(body) : {};
-      res.statusCode = 200;
-      res.end(
-        JSON.stringify({ message: "Successfully updated", option: data.option })
-      ); //Updates data based on the request body.
-    } else if (url === "/" && method === "POST") {
-      const data = body ? JSON.parse(body) : {};
-      res.statusCode = 201;
-      res.end(
-        JSON.stringify({ message: "Successfully created", option: data.option })
-      ); //Handles the creation of data.
-    } else if (url === "/" && method === "DELETE") {
-      const data = body ? JSON.parse(body) : {};
-      res.statusCode = 200;
-      res.end(
-        JSON.stringify({ message: "Successfully deleted", option: data.option })
-      ); //Deletes data and responds with a success message
+    if (parsedUrl.pathname === '/') {
+        // Handle GET request (Read)
+        if (req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end('<h1>Welcome to the Node.js server</h1>');
+        } 
+        // Handle POST request (Create)
+        else if (req.method === 'POST') {
+            let body = ''; 
+            req.on('data', chunk => {
+                body += chunk.toString(); 
+            });
+            req.on('end', () => {
+               
+                const data = JSON.parse(body);
+                // Check if the option is 'posting'
+                if (data.option === 'posting') {
+                    res.writeHead(201, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message: 'Successfully created!', option: data.option })); 
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'application/json' })
+                    res.end(JSON.stringify({ message: 'Invalid option for POST' }));
+                }
+            });
+        } 
+        // Handle PUT and PATCH requests (Update)
+        else if (req.method === 'PUT' || req.method === 'PATCH') {
+            let body = ''; 
+            req.on('data', chunk => {
+                body += chunk.toString(); 
+            });
+            req.on('end', () => {
+           
+                const data = JSON.parse(body);
+                // Check if the option is 'update'
+                if (data.option === 'update') {
+                    res.writeHead(200, { 'Content-Type': 'application/json' }); 
+                    res.end(JSON.stringify({ message: 'Successfully updated!', option: data.option })); 
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'application/json' }); 
+                    res.end(JSON.stringify({ message: 'Invalid option for PUT/PATCH' })); 
+                }
+            });
+        } 
+        // Handle DELETE request (Delete)
+        else if (req.method === 'DELETE') {
+            let body = ''; 
+            req.on('data', chunk => {
+                body += chunk.toString(); 
+            });
+            req.on('end', () => {
+    
+                const data = JSON.parse(body);
+                // Check if the option is 'removal'
+                if (data.option === 'removal') {
+                    res.writeHead(200, { 'Content-Type': 'application/json' }); 
+                    res.end(JSON.stringify({ message: 'Successfully deleted!', option: data.option })); 
+                } else {
+                    res.writeHead(400, { 'Content-Type': 'application/json' }); 
+                    res.end(JSON.stringify({ message: 'Invalid option for DELETE' })); 
+                }
+            });
+        } else {
+            // Handle unsupported methods
+            res.writeHead(405, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: `Method ${req.method} not allowed` })); 
+        }
     } else {
-      res.statusCode = 404;
-      res.end(JSON.stringify({ error: "Route not found" }));
+        // Handle 404 for routes that are not found
+        res.writeHead(404, { 'Content-Type': 'application/json' }); // Not Found
+        res.end(JSON.stringify({ message: 'Not Found' })); // Send error response
     }
-  });
-
-  // Error handling
-  req.on("error", (err) => {
-    res.statusCode = 500;
-    res.end(JSON.stringify({ error: "Server error", details: err.message }));
-  });
 });
 
-// Start the server
+// Start the server on port 3000
 const PORT = 3000;
 server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
